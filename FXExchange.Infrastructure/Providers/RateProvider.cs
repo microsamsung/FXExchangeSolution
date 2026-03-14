@@ -1,6 +1,5 @@
-﻿using System.Collections.Immutable;
-using System.Threading;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using System.Collections.Immutable;
 
 namespace FXExchange.Infrastructure.Providers;
 

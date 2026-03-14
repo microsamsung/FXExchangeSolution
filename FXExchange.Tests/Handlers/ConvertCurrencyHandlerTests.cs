@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using FXExchange.Application.Commands;
-using FXExchange.Infrastructure.Services;
 using FXExchange.Infrastructure.Providers;
+using FXExchange.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -13,23 +13,17 @@ public class ConvertCurrencyHandlerTests
 
     public ConvertCurrencyHandlerTests()
     {
-        var rlog =
-            new Mock<ILogger<RateProvider>>();
+        var rlog = new Mock<ILogger<RateProvider>>();
 
-        var slog =
-            new Mock<ILogger<CurrencyService>>();
+        var slog = new Mock<ILogger<CurrencyService>>();
 
-        var hlog =
-            new Mock<ILogger<ConvertCurrencyHandler>>();
+        var hlog = new Mock<ILogger<ConvertCurrencyHandler>>();
 
-        var provider =
-            new RateProvider(rlog.Object);
+        var provider = new RateProvider(rlog.Object);
 
-        var service =
-            new CurrencyService(provider, slog.Object);
+        var service = new CurrencyService(provider, slog.Object);
 
-        _handler =
-            new ConvertCurrencyHandler(service, hlog.Object);
+        _handler = new ConvertCurrencyHandler(service, hlog.Object);
     }
 
     [Fact]
@@ -42,10 +36,7 @@ public class ConvertCurrencyHandlerTests
             Amount = 10
         };
 
-        var r =
-        await _handler.Handle(
-            cmd,
-            CancellationToken.None);
+        var r = await _handler.Handle( cmd, CancellationToken.None);
 
         r.Success.Should().BeTrue();
     }
@@ -61,9 +52,7 @@ public class ConvertCurrencyHandlerTests
         };
 
         var r =
-        await _handler.Handle(
-            cmd,
-            CancellationToken.None);
+        await _handler.Handle( cmd, CancellationToken.None);
 
         r.Success.Should().BeFalse();
     }

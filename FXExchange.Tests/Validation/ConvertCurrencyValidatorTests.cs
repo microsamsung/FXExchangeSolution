@@ -1,6 +1,6 @@
-﻿using FXExchange.Application.Commands;
+﻿using FluentAssertions;
+using FXExchange.Application.Commands;
 using FXExchange.Application.Validators;
-using FluentAssertions;
 
 namespace FXExchange.Tests.Validation;
 
@@ -10,11 +10,9 @@ public class ConvertCurrencyValidatorTests
     [Fact]
     public void ShouldValidateValidRequest()
     {
-        var validator =
-            new ConvertCurrencyValidator();
+        var validator = new ConvertCurrencyValidator();
 
-        var command =
-            new ConvertCurrencyCommand
+        var command = new ConvertCurrencyCommand
             {
                 BaseCurrency = "EUR",
 
@@ -23,8 +21,7 @@ public class ConvertCurrencyValidatorTests
                 Amount = 10
             };
 
-        var result =
-            validator.Validate(command);
+        var result = validator.Validate(command);
 
         result.IsValid
               .Should()
@@ -34,11 +31,9 @@ public class ConvertCurrencyValidatorTests
     [Fact]
     public void ShouldFailEmptyCurrency()
     {
-        var validator =
-            new ConvertCurrencyValidator();
+        var validator = new ConvertCurrencyValidator();
 
-        var command =
-            new ConvertCurrencyCommand
+        var command = new ConvertCurrencyCommand
             {
                 BaseCurrency = "",
 
@@ -47,8 +42,7 @@ public class ConvertCurrencyValidatorTests
                 Amount = 10
             };
 
-        var result =
-            validator.Validate(command);
+        var result = validator.Validate(command);
 
         result.IsValid.Should().BeFalse();
     }
@@ -56,11 +50,9 @@ public class ConvertCurrencyValidatorTests
     [Fact]
     public void ShouldFailZeroAmount()
     {
-        var validator =
-            new ConvertCurrencyValidator();
+        var validator = new ConvertCurrencyValidator();
 
-        var command =
-            new ConvertCurrencyCommand
+        var command = new ConvertCurrencyCommand
             {
                 BaseCurrency = "EUR",
 

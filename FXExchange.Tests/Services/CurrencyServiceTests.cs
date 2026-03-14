@@ -1,6 +1,6 @@
-﻿using FXExchange.Infrastructure.Services;
+﻿using FluentAssertions;
 using FXExchange.Infrastructure.Providers;
-using FluentAssertions;
+using FXExchange.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 

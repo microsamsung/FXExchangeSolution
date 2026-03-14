@@ -1,5 +1,5 @@
-﻿using FXExchange.Infrastructure.Providers;
-using FluentAssertions;
+﻿using FluentAssertions;
+using FXExchange.Infrastructure.Providers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Immutable;
