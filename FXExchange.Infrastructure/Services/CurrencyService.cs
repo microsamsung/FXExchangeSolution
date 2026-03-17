@@ -10,9 +10,7 @@ public sealed class CurrencyService : ICurrencyService
 
     private readonly ILogger<CurrencyService> _logger;
 
-    public CurrencyService(
-        RateProvider provider,
-        ILogger<CurrencyService> logger)
+    public CurrencyService( RateProvider provider, ILogger<CurrencyService> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
 
@@ -23,7 +21,7 @@ public sealed class CurrencyService : ICurrencyService
         _logger = logger;
     }
 
-    public ValueTask<decimal> Convert(
+    public ValueTask<decimal> Convert( 
         string baseCurrency,
         string quoteCurrency,
         decimal amount)
@@ -46,19 +44,14 @@ public sealed class CurrencyService : ICurrencyService
             }
 
             // Normalize inputs
-            baseCurrency =
-                baseCurrency.Trim()
-                .ToUpperInvariant();
+            baseCurrency = baseCurrency.Trim().ToUpperInvariant();
 
-            quoteCurrency =
-                quoteCurrency.Trim()
-                .ToUpperInvariant();
+            quoteCurrency = quoteCurrency.Trim().ToUpperInvariant();
 
-            _logger.LogInformation(
-            "Conversion requested {BaseCurrency} to {QuoteCurrency} Amount {Amount}",
-            baseCurrency,
-            quoteCurrency,
-            amount);
+            _logger.LogInformation("Conversion requested {BaseCurrency} to {QuoteCurrency} Amount {Amount}",
+                                    baseCurrency,
+                                    quoteCurrency,
+                                    amount);
 
             // Same currency fast path
             if (baseCurrency == quoteCurrency)
@@ -70,34 +63,23 @@ public sealed class CurrencyService : ICurrencyService
             }
 
             // Get rates
-            var baseRate =
-                _provider.Get(baseCurrency);
+            var baseRate = _provider.Get(baseCurrency);
 
-            var quoteRate =
-                _provider.Get(quoteCurrency);
+            var quoteRate = _provider.Get(quoteCurrency);
 
             if (baseRate <= 0 || quoteRate <= 0)
             {
-                _logger.LogError(
-                "Invalid rate detected Base:{BaseRate} Quote:{QuoteRate}",
-                baseRate,
-                quoteRate);
+                _logger.LogError( "Invalid rate detected Base:{BaseRate} Quote:{QuoteRate}", baseRate,quoteRate);
 
-                throw new InvalidOperationException(
-                    "Invalid exchange rate");
+                throw new InvalidOperationException("Invalid exchange rate");
             }
 
-            _logger.LogInformation(
-            "Rates retrieved Base:{BaseRate} Quote:{QuoteRate}",
-            baseRate,
-            quoteRate);
+            _logger.LogInformation("Rates retrieved Base:{BaseRate} Quote:{QuoteRate}",baseRate,quoteRate);
 
             // Conversion calculation
-            var conversionRate =
-                quoteRate / baseRate;
+            var conversionRate = quoteRate / baseRate;
 
-            var result =
-                amount * conversionRate;
+            var result = amount * conversionRate;
 
             _logger.LogInformation( "Conversion completed Rate:{Rate} Result:{Result}", conversionRate,result);
 
