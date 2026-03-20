@@ -12,7 +12,6 @@ using FXExchange.Persistence.Repository;
 using FXExchange.Persistence.UnitOfWork;
 using FXExchange.Domain.Entities;
 using System.Globalization;
-using FXExchange.Infrastructure.BackgroundServices;
 
 var host = Host.CreateDefaultBuilder(args)
 .ConfigureServices(services =>
@@ -36,15 +35,12 @@ var host = Host.CreateDefaultBuilder(args)
 
     services.AddHostedService<RateRefreshService>();
 
-    services.AddScoped<ICurrencyService,
-        CurrencyService>();
+    services.AddScoped<ICurrencyService,CurrencyService>();
 
     // Repository
-    services.AddScoped<IRepository<ExchangeRate>,
-        ExchangeRepository>();
+    services.AddScoped<IRepository<ExchangeRate>,ExchangeRepository>();
 
-    services.AddScoped<IUnitOfWork,
-        UnitOfWork>();
+    services.AddScoped<IUnitOfWork,UnitOfWork>();
 
 
 

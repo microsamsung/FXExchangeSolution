@@ -1,11 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace FXExchange.Infrastructure.Providers;
 
 public sealed class RateProvider
 {
-    private ImmutableDictionary<string, decimal> _rates;
+    private ImmutableDictionary<string, decimal>
+        _rates;
 
     private readonly object _writeLock = new();
 
@@ -15,7 +17,8 @@ public sealed class RateProvider
 
     public int Version { get; private set; }
 
-    public RateProvider( ILogger<RateProvider> logger)
+    public RateProvider(
+        ILogger<RateProvider> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -32,9 +35,11 @@ public sealed class RateProvider
     /// Seeds initial FX rates.
     /// Immutable dictionary guarantees safe concurrent reads.
     /// </summary>
-    private static ImmutableDictionary<string, decimal> Seed()
+    private static ImmutableDictionary<string, decimal>
+    Seed()
     {
-        return new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
+        return new Dictionary<string, decimal>(
+            StringComparer.OrdinalIgnoreCase)
         {
             ["EUR"] = 743.94m,
             ["USD"] = 663.11m,
@@ -45,7 +50,8 @@ public sealed class RateProvider
             ["JPY"] = 5.9740m,
             ["DKK"] = 100m
 
-        }.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+        }.ToImmutableDictionary(
+            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -55,72 +61,95 @@ public sealed class RateProvider
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
 
-        currency = currency.Trim() .ToUpperInvariant();
+        currency =
+            currency.Trim()
+            .ToUpperInvariant();
 
-        var snapshot = Volatile.Read(ref _rates);
+        var snapshot =
+            Volatile.Read(ref _rates);
 
-        if (!snapshot.TryGetValue( currency, out var rate))
+        if (!snapshot.TryGetValue(
+            currency,
+            out var rate))
         {
-            _logger.LogWarning( "Currency not found {Currency}", currency);
+            _logger.LogWarning(
+            "Currency not found {Currency}",
+            currency);
 
-            throw new ArgumentException( $"Unknown currency {currency}");
-        }
-
-        if (rate <= 0)
-        {
-            _logger.LogError( "Invalid stored rate {Currency} {Rate}", currency, rate);
-
-            throw new InvalidOperationException( "Invalid exchange rate data");
+            throw new ArgumentException(
+                $"Unknown currency {currency}");
         }
 
         return rate;
     }
 
+    public IReadOnlyDictionary<string, decimal>
+    GetSnapshot()
+    {
+        return _rates;
+    }
     /// <summary>
     /// Atomic snapshot update.
     /// Writers lock briefly.
     /// Readers remain lock-free.
     /// </summary>
-    public void UpdateSnapshot( ImmutableDictionary<string, decimal>  newRates)
+    public void UpdateSnapshot(
+        ImmutableDictionary<string, decimal>
+        newRates)
     {
-        ArgumentNullException.ThrowIfNull(newRates);
+        ArgumentNullException
+            .ThrowIfNull(newRates);
 
         if (newRates.Count == 0)
-            throw new ArgumentException( "Rates cannot be empty");
+            throw new ArgumentException(
+                "Rates cannot be empty");
 
         ValidateRates(newRates);
 
         lock (_writeLock)
         {
-            // Atomic replace
-            Volatile.Write( ref _rates, newRates);
+            Interlocked.Exchange(
+                ref _rates,
+                newRates);
 
             Version++;
 
-            LastUpdated = DateTime.UtcNow;
+            LastUpdated =
+                DateTime.UtcNow;
         }
 
-        _logger.LogInformation( "Rates updated Version {Version} Count {Count}", Version, newRates.Count);
+        _logger.LogInformation(
+        "Rates updated Version {Version} Count {Count}",
+        Version,
+        newRates.Count);
     }
 
     /// <summary>
     /// Validates snapshot integrity.
     /// Prevents corrupt data entering cache.
     /// </summary>
-    private void ValidateRates( ImmutableDictionary<string, decimal> rates)
+    private void ValidateRates(
+        ImmutableDictionary<string, decimal>
+        rates)
     {
         foreach (var rate in rates)
         {
-            if (string.IsNullOrWhiteSpace( rate.Key))
+            if (string.IsNullOrWhiteSpace(
+                rate.Key))
             {
-                throw new ArgumentException( "Currency key invalid");
+                throw new ArgumentException(
+                    "Currency invalid");
             }
 
             if (rate.Value <= 0)
             {
-                _logger.LogError( "Invalid rate detected {Currency} {Rate}", rate.Key, rate.Value);
+                _logger.LogError(
+                "Invalid rate {Currency} {Rate}",
+                rate.Key,
+                rate.Value);
 
-                throw new ArgumentException( "Rate must be positive");
+                throw new ArgumentException(
+                    "Rate must be positive");
             }
         }
     }

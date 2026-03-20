@@ -8,9 +8,12 @@ public sealed class CurrencyService : ICurrencyService
 {
     private readonly RateProvider _provider;
 
-    private readonly ILogger<CurrencyService> _logger;
+    private readonly ILogger<CurrencyService>
+        _logger;
 
-    public CurrencyService( RateProvider provider, ILogger<CurrencyService> logger)
+    public CurrencyService(
+        RateProvider provider,
+        ILogger<CurrencyService> logger)
     {
         ArgumentNullException.ThrowIfNull(provider);
 
@@ -21,7 +24,7 @@ public sealed class CurrencyService : ICurrencyService
         _logger = logger;
     }
 
-    public ValueTask<decimal> Convert( 
+    public ValueTask<decimal> Convert(
         string baseCurrency,
         string quoteCurrency,
         decimal amount)
@@ -29,71 +32,55 @@ public sealed class CurrencyService : ICurrencyService
         try
         {
             // Input validation
-            ArgumentException.ThrowIfNullOrWhiteSpace(baseCurrency);
+            ArgumentException
+                .ThrowIfNullOrWhiteSpace(baseCurrency);
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(quoteCurrency);
+            ArgumentException
+                .ThrowIfNullOrWhiteSpace(quoteCurrency);
 
             if (amount <= 0)
-            {
-                _logger.LogWarning(
-                "Invalid amount received {Amount}",
-                amount);
-
                 throw new ArgumentException(
                     "Amount must be positive");
-            }
-
             // Normalize inputs
-            baseCurrency = baseCurrency.Trim().ToUpperInvariant();
+            baseCurrency =
+                baseCurrency.Trim()
+                .ToUpperInvariant();
 
-            quoteCurrency = quoteCurrency.Trim().ToUpperInvariant();
+            quoteCurrency =
+                quoteCurrency.Trim()
+                .ToUpperInvariant();
 
-            _logger.LogInformation("Conversion requested {BaseCurrency} to {QuoteCurrency} Amount {Amount}",
-                                    baseCurrency,
-                                    quoteCurrency,
-                                    amount);
+            _logger.LogInformation(
+            "Conversion {Base} {Quote} {Amount}",
+            baseCurrency,
+            quoteCurrency,
+            amount);
 
             // Same currency fast path
             if (baseCurrency == quoteCurrency)
-            {
-                _logger.LogInformation(
-                "Same currency conversion detected");
-
                 return ValueTask.FromResult(amount);
-            }
-
             // Get rates
-            var baseRate = _provider.Get(baseCurrency);
-
-            var quoteRate = _provider.Get(quoteCurrency);
-
-            if (baseRate <= 0 || quoteRate <= 0)
-            {
-                _logger.LogError( "Invalid rate detected Base:{BaseRate} Quote:{QuoteRate}", baseRate,quoteRate);
-
-                throw new InvalidOperationException("Invalid exchange rate");
-            }
-
-            _logger.LogInformation("Rates retrieved Base:{BaseRate} Quote:{QuoteRate}",baseRate,quoteRate);
-
+            var baseRate =
+                _provider.Get(baseCurrency);
             // Conversion calculation
-            var conversionRate = quoteRate / baseRate;
+            var quoteRate =
+                _provider.Get(quoteCurrency);
 
-            var result = amount * conversionRate;
+            var result =
+                amount *
+                (quoteRate / baseRate);
 
-            _logger.LogInformation( "Conversion completed Rate:{Rate} Result:{Result}", conversionRate,result);
+            _logger.LogInformation(
+            "Conversion result {Result}",
+            result);
 
             return ValueTask.FromResult(result);
         }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning( ex, "Validation failure during conversion");
-
-            throw;
-        }
         catch (Exception ex)
         {
-            _logger.LogError( ex, "Unexpected conversion failure {BaseCurrency} {QuoteCurrency}", baseCurrency, quoteCurrency);
+            _logger.LogError(
+            ex,
+            "Conversion failed");
 
             throw;
         }

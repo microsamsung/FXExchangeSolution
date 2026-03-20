@@ -24,8 +24,7 @@ public sealed class UnitOfWork : IUnitOfWork
         _logger = logger;
     }
 
-    public async Task Save(
-        )
+    public async Task Save( )
     {
         try
         {

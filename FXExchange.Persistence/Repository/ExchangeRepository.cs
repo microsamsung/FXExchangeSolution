@@ -47,17 +47,14 @@ public sealed class ExchangeRepository :
         }
     }
 
-    public async Task Add(
-        ExchangeRate entity)
+    public async Task Add( ExchangeRate entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        await _context.Rates
-            .AddAsync(entity);
+        await _context.Rates.AddAsync(entity);
     }
 
-    public Task Update(
-        ExchangeRate entity)
+    public Task Update( ExchangeRate entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -66,8 +63,7 @@ public sealed class ExchangeRepository :
         return Task.CompletedTask;
     }
 
-    public Task Delete(
-        ExchangeRate entity)
+    public Task Delete( ExchangeRate entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
