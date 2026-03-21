@@ -1,16 +1,16 @@
-﻿using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using FXExchange.Application.Commands;
+﻿using FXExchange.Application.Commands;
 using FXExchange.Application.Interfaces;
-using FXExchange.Infrastructure.Services;
+using FXExchange.Domain.Entities;
 using FXExchange.Infrastructure.Providers;
+using FXExchange.Infrastructure.Services;
 using FXExchange.Persistence.Context;
 using FXExchange.Persistence.Repository;
 using FXExchange.Persistence.UnitOfWork;
-using FXExchange.Domain.Entities;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 
 var host = Host.CreateDefaultBuilder(args)

@@ -76,7 +76,8 @@ public sealed class RateRefreshService :
 
             ["JPY"] = 5.9740m,
 
-            ["DKK"] = 100m
+            ["DKK"] = 100m +
+            Random.Shared.Next(-3, 3)
 
         }.ToImmutableDictionary(
             StringComparer.OrdinalIgnoreCase);
