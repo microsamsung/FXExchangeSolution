@@ -1,13 +1,13 @@
 ﻿using System.Collections.Immutable;
 using System.Threading;
+using FXExchange.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FXExchange.Infrastructure.Providers;
 
 public sealed class RateProvider
 {
-    private ImmutableDictionary<string, decimal>
-        _rates;
+    private ImmutableDictionary<string, decimal> _rates;
 
     private readonly object _writeLock = new();
 
@@ -35,8 +35,7 @@ public sealed class RateProvider
     /// Seeds initial FX rates.
     /// Immutable dictionary guarantees safe concurrent reads.
     /// </summary>
-    private static ImmutableDictionary<string, decimal>
-    Seed()
+    private static ImmutableDictionary<string, decimal> Seed()
     {
         return new Dictionary<string, decimal>(
             StringComparer.OrdinalIgnoreCase)
@@ -55,11 +54,16 @@ public sealed class RateProvider
     }
 
     /// <summary>
-    /// Lock-free read. Uses snapshot pattern.
+    /// Lock-free read using snapshot pattern.
     /// </summary>
     public decimal Get(string currency)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(currency);
+        if (string.IsNullOrWhiteSpace(currency))
+        {
+            throw new DomainException(
+                "Currency is required",
+                "FX_CURRENCY_REQUIRED");
+        }
 
         currency =
             currency.Trim()
@@ -76,18 +80,36 @@ public sealed class RateProvider
             "Currency not found {Currency}",
             currency);
 
-            throw new ArgumentException(
-                $"Unknown currency {currency}");
+            throw new DomainException(
+                $"Currency {currency} not supported",
+                "FX_UNKNOWN_CURRENCY");
+        }
+
+        if (rate <= 0)
+        {
+            _logger.LogError(
+            "Invalid cached rate {Currency} {Rate}",
+            currency,
+            rate);
+
+            throw new DomainException(
+                "Invalid rate detected",
+                "FX_INVALID_RATE");
         }
 
         return rate;
     }
 
+    /// <summary>
+    /// Returns current immutable snapshot.
+    /// Safe for monitoring and diagnostics.
+    /// </summary>
     public IReadOnlyDictionary<string, decimal>
     GetSnapshot()
     {
-        return _rates;
+        return Volatile.Read(ref _rates);
     }
+
     /// <summary>
     /// Atomic snapshot update.
     /// Writers lock briefly.
@@ -97,12 +119,19 @@ public sealed class RateProvider
         ImmutableDictionary<string, decimal>
         newRates)
     {
-        ArgumentNullException
-            .ThrowIfNull(newRates);
+        if (newRates is null)
+        {
+            throw new DomainException(
+                "Rates cannot be null",
+                "FX_RATES_NULL");
+        }
 
         if (newRates.Count == 0)
-            throw new ArgumentException(
-                "Rates cannot be empty");
+        {
+            throw new DomainException(
+                "Rates cannot be empty",
+                "FX_RATES_EMPTY");
+        }
 
         ValidateRates(newRates);
 
@@ -137,19 +166,21 @@ public sealed class RateProvider
             if (string.IsNullOrWhiteSpace(
                 rate.Key))
             {
-                throw new ArgumentException(
-                    "Currency invalid");
+                throw new DomainException(
+                    "Currency code invalid",
+                    "FX_INVALID_CURRENCY");
             }
 
             if (rate.Value <= 0)
             {
                 _logger.LogError(
-                "Invalid rate {Currency} {Rate}",
+                "Invalid rate detected {Currency} {Rate}",
                 rate.Key,
                 rate.Value);
 
-                throw new ArgumentException(
-                    "Rate must be positive");
+                throw new DomainException(
+                    $"Invalid rate for {rate.Key}",
+                    "FX_INVALID_RATE");
             }
         }
     }

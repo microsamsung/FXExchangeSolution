@@ -1,4 +1,5 @@
 ﻿using FXExchange.Application.Interfaces;
+using FXExchange.Domain.Exceptions;
 using FXExchange.Infrastructure.Providers;
 using Microsoft.Extensions.Logging;
 
@@ -8,8 +9,7 @@ public sealed class CurrencyService : ICurrencyService
 {
     private readonly RateProvider _provider;
 
-    private readonly ILogger<CurrencyService>
-        _logger;
+    private readonly ILogger<CurrencyService> _logger;
 
     public CurrencyService(
         RateProvider provider,
@@ -31,17 +31,23 @@ public sealed class CurrencyService : ICurrencyService
     {
         try
         {
-            // Input validation
-            ArgumentException
-                .ThrowIfNullOrWhiteSpace(baseCurrency);
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(baseCurrency))
+                throw new DomainException(
+                    "Base currency is required",
+                    "FX_BASE_REQUIRED");
 
-            ArgumentException
-                .ThrowIfNullOrWhiteSpace(quoteCurrency);
+            if (string.IsNullOrWhiteSpace(quoteCurrency))
+                throw new DomainException(
+                    "Quote currency is required",
+                    "FX_QUOTE_REQUIRED");
 
             if (amount <= 0)
-                throw new ArgumentException(
-                    "Amount must be positive");
-            // Normalize inputs
+                throw new DomainException(
+                    "Amount must be positive",
+                    "FX_INVALID_AMOUNT");
+
+            // Normalize
             baseCurrency =
                 baseCurrency.Trim()
                 .ToUpperInvariant();
@@ -51,38 +57,66 @@ public sealed class CurrencyService : ICurrencyService
                 .ToUpperInvariant();
 
             _logger.LogInformation(
-            "Conversion {Base} {Quote} {Amount}",
+            "Starting conversion {Base} -> {Quote} Amount {Amount}",
             baseCurrency,
             quoteCurrency,
             amount);
 
             // Same currency fast path
             if (baseCurrency == quoteCurrency)
+            {
+                _logger.LogInformation(
+                "Same currency conversion detected");
+
                 return ValueTask.FromResult(amount);
+            }
+
             // Get rates
             var baseRate =
                 _provider.Get(baseCurrency);
-            // Conversion calculation
+
             var quoteRate =
                 _provider.Get(quoteCurrency);
 
+            // Defensive validation
+            if (baseRate <= 0 || quoteRate <= 0)
+            {
+                throw new DomainException(
+                    "Invalid exchange rate",
+                    "FX_INVALID_RATE");
+            }
+
+            // Conversion calculation
             var result =
-                amount *
-                (quoteRate / baseRate);
+                amount * (quoteRate / baseRate);
 
             _logger.LogInformation(
-            "Conversion result {Result}",
+            "Conversion completed Rate:{Rate} Result:{Result}",
+            quoteRate / baseRate,
             result);
 
             return ValueTask.FromResult(result);
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(
+            ex,
+            "Business validation failed");
+
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(
             ex,
-            "Conversion failed");
+            "Unexpected conversion failure {Base} {Quote}",
+            baseCurrency,
+            quoteCurrency);
 
-            throw;
+            throw new DomainException(
+                "Conversion failed",
+                "FX_CONVERSION_ERROR",
+                ex);
         }
     }
 }

@@ -2,12 +2,14 @@
 using Microsoft.Extensions.Logging;
 using FXExchange.Application.Common;
 using FXExchange.Application.Interfaces;
+using FXExchange.Domain.Exceptions;
 
 namespace FXExchange.Application.Commands;
 
 public sealed class ConvertCurrencyHandler :
-    IRequestHandler<ConvertCurrencyCommand,
-    Result<decimal>>
+    IRequestHandler<
+        ConvertCurrencyCommand,
+        Result<decimal>>
 {
     private readonly ICurrencyService _service;
 
@@ -33,10 +35,16 @@ public sealed class ConvertCurrencyHandler :
     {
         try
         {
-            ArgumentNullException.ThrowIfNull(request);
+            if (request is null)
+                throw new DomainException(
+                    "Request cannot be null",
+                    "FX_REQUEST_NULL");
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
 
             _logger.LogInformation(
-            "Processing conversion {Base} to {Quote} amount {Amount}",
+            "Conversion request {Base}->{Quote} Amount {Amount}",
             request.BaseCurrency,
             request.QuoteCurrency,
             request.Amount);
@@ -48,19 +56,40 @@ public sealed class ConvertCurrencyHandler :
                     request.Amount);
 
             _logger.LogInformation(
-            "Conversion completed result {Result}",
+            "Conversion successful Result {Result}",
             result);
 
             return Result<decimal>.Ok(result);
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(
+            ex,
+            "Business validation failed {Base} {Quote}",
+            request?.BaseCurrency,
+            request?.QuoteCurrency);
+
+            return Result<decimal>.Fail(
+                ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+            "Conversion cancelled");
+
+            return Result<decimal>.Fail(
+                "Operation cancelled");
         }
         catch (Exception ex)
         {
             _logger.LogError(
             ex,
-            "Conversion failed");
+            "Unexpected failure {Base} {Quote}",
+            request?.BaseCurrency,
+            request?.QuoteCurrency);
 
-            return Result<decimal>
-                .Fail(ex.Message);
+            return Result<decimal>.Fail(
+                "Unexpected conversion error");
         }
     }
 }
