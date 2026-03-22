@@ -69,8 +69,8 @@ public sealed class RateProvider
             currency.Trim()
             .ToUpperInvariant();
 
-        var snapshot =
-            Volatile.Read(ref _rates);
+        /// current immutable snapshot.
+        var snapshot = GetSnapshot();
 
         if (!snapshot.TryGetValue(
             currency,

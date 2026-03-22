@@ -5,12 +5,12 @@ namespace FXExchange.Persistence.Context
 {
     public class FxDbContext : DbContext
     {
-        public DbSet<ExchangeRate> Rates { get; set; }
-
         public FxDbContext(
             DbContextOptions<FxDbContext> options)
             : base(options)
         {
         }
+
+        public DbSet<ExchangeRate> Rates { get; set; }
     }
 }
