@@ -24,31 +24,25 @@ public class RateProviderTests
     [Fact]
     public void Get_WithKnownCurrency_ReturnsExpectedRate()
     {
-        var result =
-            _provider.Get("EUR");
-
-        result.Should()
-            .BeGreaterThan(0);
+        _provider.Get("EUR")
+            .Should()
+            .Be(743.94m);
     }
 
     [Fact]
     public void Get_WithLowerCaseCurrency_ReturnsExpectedRate()
     {
-        var result =
-            _provider.Get("eur");
-
-        result.Should()
-            .BeGreaterThan(0);
+        _provider.Get("eur")
+            .Should()
+            .Be(743.94m);
     }
 
     [Fact]
     public void Get_WithWhitespaceCurrency_ReturnsExpectedRate()
     {
-        var result =
-            _provider.Get(" EUR ");
-
-        result.Should()
-            .BeGreaterThan(0);
+        _provider.Get(" EUR ")
+            .Should()
+            .Be(743.94m);
     }
 
     [Fact]
@@ -58,7 +52,8 @@ public class RateProviderTests
             () => _provider.Get("XXX");
 
         act.Should()
-            .Throw<DomainException>();
+            .Throw<DomainException>()
+            .WithMessage("*not supported*");
     }
 
     [Fact]
@@ -79,7 +74,8 @@ public class RateProviderTests
             new Dictionary<string, decimal>
             {
                 ["EUR"] = 999m
-            }.ToImmutableDictionary();
+            }
+            .ToImmutableDictionary();
 
         _provider.UpdateSnapshot(rates);
 
@@ -98,7 +94,8 @@ public class RateProviderTests
             new Dictionary<string, decimal>
             {
                 ["EUR"] = 500m
-            }.ToImmutableDictionary());
+            }
+            .ToImmutableDictionary());
 
         _provider.Version
             .Should()
@@ -117,11 +114,50 @@ public class RateProviderTests
             new Dictionary<string, decimal>
             {
                 ["EUR"] = 600m
-            }.ToImmutableDictionary());
+            }
+            .ToImmutableDictionary());
 
         _provider.LastUpdated
             .Should()
             .BeAfter(previousTimestamp);
+    }
+
+    [Fact]
+    public void UpdateSnapshot_WithNullRates_ThrowsDomainException()
+    {
+        Action act =
+            () => _provider.UpdateSnapshot(null!);
+
+        act.Should()
+            .Throw<DomainException>();
+    }
+
+    [Fact]
+    public void UpdateSnapshot_WithEmptyRates_ThrowsDomainException()
+    {
+        Action act =
+            () => _provider.UpdateSnapshot(
+                ImmutableDictionary<string, decimal>.Empty);
+
+        act.Should()
+            .Throw<DomainException>();
+    }
+
+    [Fact]
+    public void UpdateSnapshot_WithInvalidRate_ThrowsDomainException()
+    {
+        var rates =
+            new Dictionary<string, decimal>
+            {
+                ["EUR"] = -1m
+            }
+            .ToImmutableDictionary();
+
+        Action act =
+            () => _provider.UpdateSnapshot(rates);
+
+        act.Should()
+            .Throw<DomainException>();
     }
 
     [Fact]
@@ -135,6 +171,10 @@ public class RateProviderTests
 
         snapshot.Should()
             .ContainKey("EUR");
+
+        snapshot["EUR"]
+            .Should()
+            .Be(743.94m);
     }
 
     [Fact]
@@ -172,7 +212,8 @@ public class RateProviderTests
                     new Dictionary<string, decimal>
                     {
                         ["EUR"] = 700m + i
-                    }.ToImmutableDictionary());
+                    }
+                    .ToImmutableDictionary());
             }
             catch (Exception ex)
             {
@@ -184,6 +225,8 @@ public class RateProviderTests
 
         _provider.Get("EUR")
             .Should()
-            .BeGreaterThan(0);
+            .BeInRange(
+                700m,
+                799m);
     }
 }

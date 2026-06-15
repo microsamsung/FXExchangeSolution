@@ -42,16 +42,16 @@ public sealed class RateRefreshService
                     await _rateSource.GetRatesAsync(
                         stoppingToken);
 
-                if (_provider is RateProvider
-                    rateProvider)
-                {
-                    rateProvider.UpdateSnapshot(
-                        rates);
+                _provider.UpdateSnapshot(
+                    rates);
 
-                    _logger.LogInformation(
-                        "Rates refreshed. Version {Version}",
-                        rateProvider.Version);
-                }
+                _logger.LogInformation(
+                    "Rates refreshed. Version {Version}",
+                    _provider.Version);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
             catch (Exception ex)
             {
@@ -64,5 +64,8 @@ public sealed class RateRefreshService
                 TimeSpan.FromMinutes(10),
                 stoppingToken);
         }
+
+        _logger.LogInformation(
+            "Rate refresh service stopped");
     }
 }
