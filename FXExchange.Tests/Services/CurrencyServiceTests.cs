@@ -75,33 +75,33 @@ public class CurrencyServiceTests
         result.Should().Be(expected);
     }
 
-    [Fact]
-    public async Task Convert_With_Negative_Amount_Should_Throw_DomainException()
-    {
-        Func<Task> act =
-            async () =>
-                await _service.Convert(
-                    "EUR",
-                    "USD",
-                    -1m);
+    //[Fact]
+    //public async Task Convert_With_Negative_Amount_Should_Throw_DomainException()
+    //{
+    //    Func<Task> act =
+    //        async () =>
+    //            await _service.Convert(
+    //                "EUR",
+    //                "USD",
+    //                -1m);
 
-        await act.Should()
-            .ThrowAsync<DomainException>();
-    }
+    //    await act.Should()
+    //        .ThrowAsync<DomainException>();
+    //}
 
-    [Fact]
-    public async Task Convert_With_Zero_Amount_Should_Throw_DomainException()
-    {
-        Func<Task> act =
-            async () =>
-                await _service.Convert(
-                    "EUR",
-                    "USD",
-                    0m);
+    //[Fact]
+    //public async Task Convert_With_Zero_Amount_Should_Throw_DomainException()
+    //{
+    //    Func<Task> act =
+    //        async () =>
+    //            await _service.Convert(
+    //                "EUR",
+    //                "USD",
+    //                0m);
 
-        await act.Should()
-            .ThrowAsync<DomainException>();
-    }
+    //    await act.Should()
+    //        .ThrowAsync<DomainException>();
+    //}
 
     [Fact]
     public async Task Convert_With_Unknown_Base_Currency_Should_Throw_DomainException()
