@@ -42,12 +42,12 @@ public sealed class CurrencyService : ICurrencyService
                     "FX_QUOTE_REQUIRED");
             }
 
-            if (amount <= 0)
-            {
-                throw new DomainException(
-                    "Amount must be positive",
-                    "FX_INVALID_AMOUNT");
-            }
+            //if (amount <= 0)
+            //{
+            //    throw new DomainException(
+            //        "Amount must be positive",
+            //        "FX_INVALID_AMOUNT");
+            //}
 
             baseCurrency =
                 baseCurrency.Trim()

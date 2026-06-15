@@ -112,13 +112,13 @@ while (true)
                 continue;
             }
 
-            if (amount <= 0)
-            {
-                Console.WriteLine(
-                    "Error: Amount must be greater than zero");
+            //if (amount <= 0)
+            //{
+            //    Console.WriteLine(
+            //        "Error: Amount must be greater than zero");
 
-                continue;
-            }
+            //    continue;
+            //}
 
             break;
         }
