@@ -20,17 +20,20 @@ public sealed class HardcodedRateSource
                 ["DKK"] = 100m
             };
 
-    public Task<ImmutableDictionary<string, decimal>>
+    public ValueTask<ImmutableDictionary<string, decimal>>
         GetRatesAsync(
             CancellationToken cancellationToken)
     {
+        cancellationToken
+            .ThrowIfCancellationRequested();
+
         var rates =
             BaseRates.ToDictionary(
                 x => x.Key,
                 x => ApplyMarketMovement(x.Value),
                 StringComparer.OrdinalIgnoreCase);
 
-        return Task.FromResult(
+        return ValueTask.FromResult(
             rates.ToImmutableDictionary(
                 StringComparer.OrdinalIgnoreCase));
     }
@@ -38,7 +41,7 @@ public sealed class HardcodedRateSource
     private static decimal ApplyMarketMovement(
         decimal rate)
     {
-        // Simulate ±0.5% market movement
+        // Simulates ±0.5% market movement
         var percentageChange =
             (decimal)(Random.Shared.NextDouble() - 0.5)
             / 100m;

@@ -4,5 +4,7 @@ namespace FXExchange.Application.Interfaces;
 
 public interface IRateSource
 {
-    Task<ImmutableDictionary<string, decimal>> GetRatesAsync(CancellationToken cancellationToken);
+    ValueTask<ImmutableDictionary<string, decimal>>
+        GetRatesAsync(
+            CancellationToken cancellationToken);
 }
