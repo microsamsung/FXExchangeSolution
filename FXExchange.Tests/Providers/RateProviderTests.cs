@@ -1,8 +1,10 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using FluentAssertions;
+using FXExchange.Domain.Exceptions;
 using FXExchange.Infrastructure.Providers;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Collections.Immutable;
 
 namespace FXExchange.Tests.Providers;
 
@@ -20,119 +22,165 @@ public class RateProviderTests
     }
 
     [Fact]
-    public void ShouldReturnRate()
+    public void Get_WithKnownCurrency_ReturnsExpectedRate()
     {
-        _provider.Get("EUR")
-            .Should()
+        var result =
+            _provider.Get("EUR");
+
+        result.Should()
             .BeGreaterThan(0);
     }
 
     [Fact]
-    public void ShouldHandleLowerCase()
+    public void Get_WithLowerCaseCurrency_ReturnsExpectedRate()
     {
-        _provider.Get("eur")
-            .Should()
+        var result =
+            _provider.Get("eur");
+
+        result.Should()
             .BeGreaterThan(0);
     }
 
     [Fact]
-    public void ShouldHandleTrim()
+    public void Get_WithWhitespaceCurrency_ReturnsExpectedRate()
     {
-        _provider.Get(" EUR ")
-            .Should()
+        var result =
+            _provider.Get(" EUR ");
+
+        result.Should()
             .BeGreaterThan(0);
     }
 
     [Fact]
-    public void ShouldThrowUnknown()
+    public void Get_WithUnknownCurrency_ThrowsDomainException()
     {
         Action act =
             () => _provider.Get("XXX");
 
         act.Should()
-            .Throw<ArgumentException>();
+            .Throw<DomainException>();
     }
 
     [Fact]
-    public void ShouldThrowNull()
+    public void Get_WithNullCurrency_ThrowsDomainException()
     {
         Action act =
-            () => _provider.Get(null);
+            () => _provider.Get(null!);
 
         act.Should()
-            .Throw<ArgumentException>();
+            .Throw<DomainException>()
+            .WithMessage("*Currency is required*");
     }
 
     [Fact]
-    public void ShouldUpdateRates()
+    public void UpdateSnapshot_ReplacesExistingRate()
     {
         var rates =
-        new Dictionary<string, decimal>
-        {
-            ["EUR"] = 999
-        }.ToImmutableDictionary();
+            new Dictionary<string, decimal>
+            {
+                ["EUR"] = 999m
+            }.ToImmutableDictionary();
 
         _provider.UpdateSnapshot(rates);
 
         _provider.Get("EUR")
             .Should()
-            .Be(999);
+            .Be(999m);
     }
 
     [Fact]
-    public void ShouldIncreaseVersion()
+    public void UpdateSnapshot_IncrementsVersion()
     {
-        var v = _provider.Version;
+        var previousVersion =
+            _provider.Version;
 
         _provider.UpdateSnapshot(
-        new Dictionary<string, decimal>
-        {
-            ["EUR"] = 500
-        }.ToImmutableDictionary());
+            new Dictionary<string, decimal>
+            {
+                ["EUR"] = 500m
+            }.ToImmutableDictionary());
 
         _provider.Version
             .Should()
-            .Be(v + 1);
+            .Be(previousVersion + 1);
     }
 
     [Fact]
-    public void ShouldUpdateTimestamp()
+    public void UpdateSnapshot_UpdatesTimestamp()
     {
-        var t = _provider.LastUpdated;
+        var previousTimestamp =
+            _provider.LastUpdated;
 
-        Thread.Sleep(10);
+        Thread.Sleep(20);
 
         _provider.UpdateSnapshot(
-        new Dictionary<string, decimal>
-        {
-            ["EUR"] = 600
-        }.ToImmutableDictionary());
+            new Dictionary<string, decimal>
+            {
+                ["EUR"] = 600m
+            }.ToImmutableDictionary());
 
         _provider.LastUpdated
             .Should()
-            .BeAfter(t);
+            .BeAfter(previousTimestamp);
     }
 
     [Fact]
-    public void ShouldHandleParallelReads()
+    public void GetSnapshot_ReturnsSnapshot()
     {
+        var snapshot =
+            _provider.GetSnapshot();
+
+        snapshot.Should()
+            .NotBeNull();
+
+        snapshot.Should()
+            .ContainKey("EUR");
+    }
+
+    [Fact]
+    public void ParallelReads_DoNotThrowExceptions()
+    {
+        var exceptions =
+            new ConcurrentBag<Exception>();
+
         Parallel.For(0, 1000, i =>
         {
-            _provider.Get("EUR");
+            try
+            {
+                _provider.Get("EUR");
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+            }
         });
+
+        exceptions.Should().BeEmpty();
     }
 
     [Fact]
-    public void ShouldHandleParallelWrites()
+    public void ParallelWrites_DoNotCorruptState()
     {
+        var exceptions =
+            new ConcurrentBag<Exception>();
+
         Parallel.For(0, 100, i =>
         {
-            _provider.UpdateSnapshot(
-            new Dictionary<string, decimal>
+            try
             {
-                ["EUR"] = 700 + i
-            }.ToImmutableDictionary());
+                _provider.UpdateSnapshot(
+                    new Dictionary<string, decimal>
+                    {
+                        ["EUR"] = 700m + i
+                    }.ToImmutableDictionary());
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+            }
         });
+
+        exceptions.Should().BeEmpty();
 
         _provider.Get("EUR")
             .Should()

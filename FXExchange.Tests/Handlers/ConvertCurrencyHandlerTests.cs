@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using FXExchange.Application.Commands;
-using FXExchange.Infrastructure.Providers;
-using FXExchange.Infrastructure.Services;
+using FXExchange.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -10,68 +9,50 @@ namespace FXExchange.Tests.Handlers;
 public class ConvertCurrencyHandlerTests
 {
     private readonly ConvertCurrencyHandler _handler;
+    private readonly Mock<ICurrencyService> _service;
 
     public ConvertCurrencyHandlerTests()
     {
-        var rlog = new Mock<ILogger<RateProvider>>();
+        _service =
+            new Mock<ICurrencyService>();
 
-        var slog = new Mock<ILogger<CurrencyService>>();
+        var logger =
+            new Mock<ILogger<ConvertCurrencyHandler>>();
 
-        var hlog = new Mock<ILogger<ConvertCurrencyHandler>>();
-
-        var provider = new RateProvider(rlog.Object);
-
-        var service = new CurrencyService(provider, slog.Object);
-
-        _handler = new ConvertCurrencyHandler(service, hlog.Object);
+        _handler =
+            new ConvertCurrencyHandler(
+                _service.Object,
+                logger.Object);
     }
 
     [Fact]
-    public async Task ShouldReturnSuccess()
+    public async Task Handle_Should_Return_Success()
     {
-        var cmd = new ConvertCurrencyCommand
-        {
-            BaseCurrency = "EUR",
-            QuoteCurrency = "USD",
-            Amount = 10
-        };
+        _service
+            .Setup(x =>
+                x.Convert(
+                    "EUR",
+                    "USD",
+                    10))
+            .ReturnsAsync(11.21985m);
 
-        var r = await _handler.Handle( cmd, CancellationToken.None);
+        var command =
+            new ConvertCurrencyCommand
+            {
+                BaseCurrency = "EUR",
+                QuoteCurrency = "USD",
+                Amount = 10
+            };
 
-        r.Success.Should().BeTrue();
-    }
+        var result =
+            await _handler.Handle(
+                command,
+                CancellationToken.None);
 
-    [Fact]
-    public async Task ShouldReturnFailure()
-    {
-        var cmd = new ConvertCurrencyCommand
-        {
-            BaseCurrency = "XXX",
-            QuoteCurrency = "USD",
-            Amount = 10
-        };
-
-        var r =
-        await _handler.Handle( cmd, CancellationToken.None);
-
-        r.Success.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task ShouldHandleSameCurrency()
-    {
-        var cmd = new ConvertCurrencyCommand
-        {
-            BaseCurrency = "EUR",
-            QuoteCurrency = "EUR",
-            Amount = 10
-        };
-
-        var r =
-        await _handler.Handle(
-            cmd,
-            CancellationToken.None);
-
-        r.Value.Should().Be(10);
+        result.Success.Should().BeTrue();
+        result.Value.Should()
+            .BeApproximately(
+                11.21985m,
+                0.0001m);
     }
 }

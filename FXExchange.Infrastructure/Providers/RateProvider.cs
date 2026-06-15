@@ -1,11 +1,12 @@
 ﻿using System.Collections.Immutable;
 using System.Threading;
+using FXExchange.Application.Interfaces;
 using FXExchange.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FXExchange.Infrastructure.Providers;
 
-public sealed class RateProvider
+public sealed class RateProvider : IRateProvider
 {
     private ImmutableDictionary<string, decimal> _rates;
 

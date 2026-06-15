@@ -22,7 +22,6 @@
     <ProjectReference Include="..\FXExchange.Application\FXExchange.Application.csproj" />
     <ProjectReference Include="..\FXExchange.Domain\FXExchange.Domain.csproj" />
     <ProjectReference Include="..\FXExchange.Infrastructure\FXExchange.Infrastructure.csproj" />
-    <ProjectReference Include="..\FXExchange.Persistence\FXExchange.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
